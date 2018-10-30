@@ -1,11 +1,33 @@
-urlmaker��urltop�����������������ʹ��make���ɿ�ִ���ļ���ʹ��run.sh���С�
+urlmaker、urltop两个程序独立，各自使用make生成可执行文件，使用run.sh运行。
 
+- urlmaker
 
-1. urlmaker�������ɲ���url������Ҫ��ƽ��url����50�ֽڣ����ɳ�������ֵ50����׼��10�ĸ�˹�ֲ��������в��������url��
-PS��urlmaker run.sh�У���һ���������������ļ��Ĵ�С��GDΪ��λ���� �ڶ�������������ļ������ض���ı�׼������������ɽ����top100��ÿ��urlͳ�ƽ��
+用来生成测试url，根据要求（平均url长度50字节）生成长度期望值50，标准差10的高斯分布长度序列并生成随机url。
 
-2. urltop����ͳ�ƽ��������������׼�����
-PS��urltop run.sh�У���һ�������������ļ������ض���ı�׼��������ͳ�ƽ����
+思路：为了验证方便，首先生成100个url作为最后的top100结果，令每个url占生成url总数的0.5%(100个url总计占用50%)，剩余50%随机生成，采用交替插入的方式补齐指定大小的url文件
 
-��Ϊ��Դԭ��Ŀǰֻʹ��10GB���ļ������˲���
-��ʱ2min50s����
+运行过程:
+1. 根据需求（平均url长度50字节），构建(期望值50，标准差10)高斯分布的url长度序列的生成器
+2. 生成top100 url序列
+3. 向指定文件写入url，每插入一条top100 url后，都插入一条新生成的随机url，直到文件大小超过输入值
+
+PS：urlmaker run.sh中，第一个参数代表生成文件的大小（GD为单位）， 第二个参数是输出文件名，重定向的标准输出里面是生成结果的top100和每个url统计结果
+
+- urltop
+
+用来统计结果，结果输出到标准输出。
+
+思路：选取hash函数，将每个url映射到一个uint32_t数值，通过统计top100_hash缩小统计范围。
+
+运行过程：
+1. 在1GB内存限制条件下，使用uint32_t[2^28]长度的数组，每个数组index是每一个hash函数的输出值。
+2. 遍历输入文件，统计每个url落到的hash值的个数。
+3. 通过堆排序筛选出top100的hash值后，再次遍历文件，如果url的hash值落到top100_hash里面，则统计该url出现次数。(unordered_map<string, int>)。
+4. 最后，从中排序选出top100 url。
+
+目前由于时间所限，hash过程只有一个线程来处理，后续优化可以考虑采用多线程加__sync_fetch_and_add的原子操作来大幅提高性能。
+
+PS：urltop run.sh中，第一个参数是输入文件名，重定向的标准输出是最后统计结果。
+
+因为资源原因，目前只使用10GB的文件进行了测试
+耗时2min50s左右
