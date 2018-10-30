@@ -20,7 +20,7 @@ PS：urlmaker run.sh中，第一个参数代表生成文件的大小（GD为单�
 思路：选取hash函数，将每个url映射到一个uint32_t数值，通过统计top100_hash缩小统计范围。
 
 运行过程：
-1. 在1GB内存限制条件下，使用uint32_t[2^28]长度的数组，每个数组index是每一个hash函数的输出值。
+1. 在1GB内存限制条件下，使用uint32_t[2^28]长度的数组，每个数组index是hash函数的输出值。
 2. 遍历输入文件，统计每个url落到的hash值的个数。
 3. 通过堆排序筛选出top100的hash值后，再次遍历文件，如果url的hash值落到top100_hash里面，则统计该url出现次数。(unordered_map<string, int>)。
 4. 最后，从中排序选出top100 url。
